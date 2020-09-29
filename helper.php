@@ -155,7 +155,7 @@ class helper_plugin_approve extends DokuWiki_Plugin {
             // regex patterns
             if ($ns[0] === '/' && preg_match($ns, $id)) {
                 $newAssignment = true;
-                $pageApprover = $approver;
+                $pageApprover[] = $approver;
             } elseif (substr($ns, -2) == '**') {
                 //remove '**'
                 $ns = substr($ns, 0, -2);
