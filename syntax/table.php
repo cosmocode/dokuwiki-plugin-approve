@@ -168,7 +168,7 @@ class syntax_plugin_approve_table extends DokuWiki_Syntax_Plugin {
             }
         }
 
-        $q = "SELECT page.page, page.approver, revision.rev, revision.approved, revision.approved_by,
+        $q = "SELECT page.page, GROUP_CONCAT(page.approver, ', ') AS approver, revision.rev, revision.approved, revision.approved_by,
                     revision.ready_for_approval, revision.ready_for_approval_by,
                     LENGTH(page.page) - LENGTH(REPLACE(page.page, ':', '')) AS colons
                     FROM page INNER JOIN revision ON page.page = revision.page
@@ -264,12 +264,14 @@ class syntax_plugin_approve_table extends DokuWiki_Syntax_Plugin {
             $renderer->doc .= '<a href="' . wl($id) . '">' . dformat($date) . '</a>';;
             $renderer->doc .= '</td><td>';
             if ($approver) {
-                $user = $auth->getUserData($approver);
-                if ($user) {
-                    $renderer->doc .= $user['name'];
-                } else {
-                    $renderer->doc .= $approver;
-                }
+                // handle multiple approvers
+                $approvers = array_map(
+                    function ($ap) use($auth) {
+                        $user = $auth->getUserData(trim($ap));
+                     return $user ? $user['name'] : $ap;
+                    }, explode(',', $approver)
+                );
+                $renderer->doc .= implode(', ', $approvers);
             } else {
                 $renderer->doc .= '---';
             }
