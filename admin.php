@@ -21,6 +21,11 @@ class admin_plugin_approve extends DokuWiki_Admin_Plugin
         return 1;
     }
 
+    public function forAdminOnly()
+    {
+        return false;
+    }
+
     protected function updatePage(helper_plugin_sqlite $sqlite, helper_plugin_approve $helper)
     {
         //clean current settings
