@@ -181,7 +181,7 @@ class syntax_plugin_approve_table extends DokuWiki_Syntax_Plugin {
         $pages = $sqlite->res2arr($res);
 
         // Output Table
-        $renderer->doc .= '<table><tr>';
+        $renderer->doc .= '<table class="plugin__approve"><tr>';
         $renderer->doc .= '<th>' . $this->getLang('hdr_page') . '</th>';
         $renderer->doc .= '<th>' . $this->getLang('hdr_state') . '</th>';
         $renderer->doc .= '<th>' . $this->getLang('hdr_updated') . '</th>';
