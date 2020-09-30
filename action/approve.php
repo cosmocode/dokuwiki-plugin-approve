@@ -345,7 +345,11 @@ class action_plugin_approve_approve extends DokuWiki_Action_Plugin {
                 },
                 $approver
             );
-            ptln(' | ' . $this->getLang('approver') . ': ' . join(", ", $approverName));
+            ptln(
+                '<span class="plugin__approve_banner_approver">' .
+                ' | ' . $this->getLang('approver') . ': ' . join(", ", $approverName) .
+                '</span>'
+            );
         }
 
 		ptln('</div>');
