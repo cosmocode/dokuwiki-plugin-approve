@@ -237,7 +237,11 @@ class action_plugin_approve_approve extends DokuWiki_Action_Plugin {
 
 			if($this->getConf('banner_long')) {
 				ptln(' ' . $this->getLang('by') . ' ' . userlink($approve['approved_by'], true));
-				ptln(' (' . $this->getLang('version') .  ': ' . $approve['version'] . ')');
+				ptln(
+                    '<span class="plugin__approve_banner_version">' .
+				    ' (' . $this->getLang('version') .  ': ' . $approve['version'] . ')' .
+                    '</span>'
+                );
 			}
 
 			//not the newest page
