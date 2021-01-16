@@ -447,9 +447,13 @@ class action_plugin_approve_approve extends DokuWiki_Action_Plugin {
                         'hidden' => $helper->in_hidden_namespace($sqlite, $id) ? '1' : '0'
                     ];
                     if (!blank($newApprover)) {
-                        $data['approver'] = $newApprover;
+                        foreach ($newApprover as $approver) {
+                            $data['approver'] = $approver;
+                            $sqlite->storeEntry('page', $data);
+                        }
+                    } else {
+                        $sqlite->storeEntry('page', $data);
                     }
-                    $sqlite->storeEntry('page', $data);
                 }
 
                 //store revision
