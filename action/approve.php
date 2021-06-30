@@ -71,11 +71,12 @@ class action_plugin_approve_approve extends DokuWiki_Action_Plugin {
         }
 	}
 
-	/**
+    /**
      * @param Doku_Event $event
      */
     public function handle_approve(Doku_Event $event) {
-		global $INFO;
+        global $INFO;
+        $isBulk = false;
 
         try {
             /** @var \helper_plugin_approve_db $db_helper */
@@ -88,6 +89,7 @@ class action_plugin_approve_approve extends DokuWiki_Action_Plugin {
         /** @var helper_plugin_approve $helper */
         $helper = plugin_load('helper', 'approve');
 
+        // FIXME this goes to helper
         if ($event->data != 'show') return;
         if (!isset($_GET['approve'])) return;
         if (!$helper->use_approve_here($sqlite, $INFO['id'], $approver)) return;
@@ -105,8 +107,9 @@ class action_plugin_approve_approve extends DokuWiki_Action_Plugin {
                         WHERE page=? AND current=1 AND approved IS NULL',
                         date('c'), $INFO['client'], $next_version, $INFO['id']);
 
-        header('Location: ' . wl($INFO['id']));
-	}
+        // redirect only in case of  single page approvals
+        if (!$isBulk) header('Location: ' . wl($INFO['id']));
+}
 
     /**
      * @param Doku_Event $event

@@ -213,7 +213,7 @@ class helper_plugin_approve extends DokuWiki_Plugin {
 
     /**
      * @param $id
-     * @param string $pageApprover
+     * @param array $pageApprover
      * @return bool
      */
     public function client_can_approve($id, $pageApprover) {

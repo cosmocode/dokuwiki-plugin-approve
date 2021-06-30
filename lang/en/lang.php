@@ -15,6 +15,9 @@ $lang['hdr_page'] = 'Page';
 $lang['hdr_state'] = 'State';
 $lang['hdr_updated'] = 'Updated';
 $lang['hdr_approver'] = $lang['approver'];
+$lang['hdr_quick'] = 'Quick approve';
+
+$lang['submit_quick'] = 'Approve all selected pages at once';
 
 $lang['all_approved'] = 'Approved';
 $lang['all_approved_ready'] = 'Ready for approval';
