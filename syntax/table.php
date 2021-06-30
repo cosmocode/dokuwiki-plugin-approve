@@ -1,9 +1,5 @@
 <?php
 
-// must be run within DokuWiki
-if(!defined('DOKU_INC')) die();
-
-
 class syntax_plugin_approve_table extends DokuWiki_Syntax_Plugin {
 
     protected $states = ['approved', 'draft', 'ready_for_approval'];
@@ -118,13 +114,9 @@ class syntax_plugin_approve_table extends DokuWiki_Syntax_Plugin {
         );
     }
 
-    public function renderXhtml(Doku_Renderer $renderer, $params)
+    protected function getApprovablePages($params)
     {
         global $INFO;
-
-        global $conf;
-        /** @var DokuWiki_Auth_Plugin $auth */
-        global $auth;
 
         try {
             /** @var \helper_plugin_approve_db $db_helper */
@@ -178,7 +170,17 @@ class syntax_plugin_approve_table extends DokuWiki_Syntax_Plugin {
                     ORDER BY colons, page.page";
 
         $res = $sqlite->query($q, $query_args);
-        $pages = $sqlite->res2arr($res);
+        return $sqlite->res2arr($res);
+    }
+
+    public function renderXhtml(Doku_Renderer $renderer, $params)
+    {
+        global $INFO;
+        global $conf;
+        /** @var DokuWiki_Auth_Plugin $auth */
+        global $auth;
+
+        $pages = $this->getApprovablePages($params);
 
         // Output Table
         $renderer->doc .= '<table class="plugin__approve"><tr>';
@@ -194,10 +196,11 @@ class syntax_plugin_approve_table extends DokuWiki_Syntax_Plugin {
         $all_approved_ready = 0;
         $all = 0;
 
-        $form = new \dokuwiki\Form\Form();
+        $form = new \dokuwiki\Form\Form(['action' => wl($INFO['id'], 'approve=approve')]);
 
         $curNS = '';
-        foreach($pages as $page) {
+
+        foreach ($pages as $page) {
             $rowMarkup = '';
 
             $id = $page['page'];
@@ -210,15 +213,22 @@ class syntax_plugin_approve_table extends DokuWiki_Syntax_Plugin {
 
             $pageNS = getNS($id);
 
-            if($pageNS != '' && $pageNS != $curNS) {
+            if ($pageNS != '' && $pageNS != $curNS) {
                 $curNS = $pageNS;
 
-                $rowMarkup .= '<tr><td colspan="5"><a href="';
+                $rowMarkup .= '<tr><td colspan="4"><a href="';
                 $rowMarkup .= wl($curNS);
                 $rowMarkup .= '">';
                 $rowMarkup .= $curNS;
                 $rowMarkup .= '</a> ';
-                $rowMarkup .= '</td></tr>';
+                $rowMarkup .= '</td>';
+                // bulk NS toggle
+                $rowMarkup .= '<td>';
+                $rowMarkup .= '<input type="checkbox" class="plugin__approve_toggle_ns" data-ns="' . $curNS . '">';
+                $rowMarkup .= $this->getLang('toggle_ns') . '</a>';
+                $rowMarkup .= '</td>';
+
+                $rowMarkup .= '</tr>';
             }
 
             $all += 1;
@@ -296,8 +306,11 @@ class syntax_plugin_approve_table extends DokuWiki_Syntax_Plugin {
 
             // finally bulk select column
             $form->addHTML('<td>');
-            if ($this->isCurrentUserApprover($id, $approversArray)) {
-                $form->addCheckbox('bulk')->val($id);
+            if (!$approved && $this->isCurrentUserApprover($id, $approversArray)) {
+                $form->addCheckbox('bulk[]')
+                    ->addClass('plugin__approve_bulk_checkbox')
+                    ->attr('data-ns', $curNS)
+                    ->val($id);
             }
             $form->addHTML('</td>');
             $form->addHTML('</tr>');
@@ -313,14 +326,14 @@ class syntax_plugin_approve_table extends DokuWiki_Syntax_Plugin {
         $renderer->doc .= $formRender;
 
         if ($params['summarize']) {
-            if($this->getConf('ready_for_approval')) {
+            if ($this->getConf('ready_for_approval')) {
                 $renderer->doc .= '<tr><td><strong>';
                 $renderer->doc .= $this->getLang('all_approved_ready');
                 $renderer->doc .= '</strong></td>';
 
                 $renderer->doc .= '<td colspan="4">';
                 $percent       = 0;
-                if($all > 0) {
+                if ($all > 0) {
                     $percent = $all_approved_ready * 100 / $all;
                 }
                 $renderer->doc .= $all_approved_ready . ' / ' . $all . sprintf(" (%.0f%%)", $percent);
@@ -333,7 +346,7 @@ class syntax_plugin_approve_table extends DokuWiki_Syntax_Plugin {
 
             $renderer->doc .= '<td colspan="4">';
             $percent       = 0;
-            if($all > 0) {
+            if ($all > 0) {
                 $percent = $all_approved * 100 / $all;
             }
             $renderer->doc .= $all_approved . ' / ' . $all . sprintf(" (%.0f%%)", $percent);

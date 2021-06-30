@@ -1,12 +1,12 @@
 <?php
 
-if(!defined('DOKU_INC')) die();
-
 class action_plugin_approve_approve extends DokuWiki_Action_Plugin {
+
     /**
      * @param Doku_Event_Handler $controller
      */
-    public function register(Doku_Event_Handler $controller) {
+    public function register(Doku_Event_Handler $controller)
+    {
         $controller->register_hook('TPL_ACT_RENDER', 'AFTER', $this, 'handle_diff_accept');
         $controller->register_hook('HTML_SHOWREV_OUTPUT', 'BEFORE', $this, 'handle_showrev');
         $controller->register_hook('ACTION_ACT_PREPROCESS', 'BEFORE', $this, 'handle_approve');
@@ -72,44 +72,31 @@ class action_plugin_approve_approve extends DokuWiki_Action_Plugin {
 	}
 
     /**
+     * Approve single or multiple pages
+     *
      * @param Doku_Event $event
      */
-    public function handle_approve(Doku_Event $event) {
+    public function handle_approve(Doku_Event $event)
+    {
         global $INFO;
-        $isBulk = false;
+        global $INPUT;
 
-        try {
-            /** @var \helper_plugin_approve_db $db_helper */
-            $db_helper = plugin_load('helper', 'approve_db');
-            $sqlite = $db_helper->getDB();
-        } catch (Exception $e) {
-            msg($e->getMessage(), -1);
-            return;
-        }
-        /** @var helper_plugin_approve $helper */
-        $helper = plugin_load('helper', 'approve');
-
-        // FIXME this goes to helper
         if ($event->data != 'show') return;
         if (!isset($_GET['approve'])) return;
-        if (!$helper->use_approve_here($sqlite, $INFO['id'], $approver)) return;
-        if (!$helper->client_can_approve($INFO['id'], $approver)) return;
 
-        $res = $sqlite->query('SELECT MAX(version)+1 FROM revision
-                                        WHERE page=?', $INFO['id']);
-        $next_version = $sqlite->res2single($res);
-        if (!$next_version) {
-            $next_version = 1;
+        $ids = [$INFO['id']];
+
+        // single or bulk approval?
+        $bulk = $INPUT->arr('bulk');
+        if (!empty($bulk)) $ids = $bulk;
+
+        foreach ($ids as $id) {
+            $this->approveSinglePage($id);
         }
-        //approved IS NULL prevents from overriding already approved page
-        $sqlite->query('UPDATE revision
-                        SET approved=?, approved_by=?, version=?
-                        WHERE page=? AND current=1 AND approved IS NULL',
-                        date('c'), $INFO['client'], $next_version, $INFO['id']);
 
-        // redirect only in case of  single page approvals
-        if (!$isBulk) header('Location: ' . wl($INFO['id']));
-}
+        // redirect only in case of single page approvals (coming from diff view)
+        if (!$bulk) header('Location: ' . wl($INFO['id']));
+    }
 
     /**
      * @param Doku_Event $event
@@ -474,5 +461,42 @@ class action_plugin_approve_approve extends DokuWiki_Action_Plugin {
                 ]);
                 break;
         }
+    }
+
+    /**
+     * @param string $id
+     */
+    protected function approveSinglePage($id)
+    {
+        global $INFO;
+
+        try {
+            /** @var \helper_plugin_approve_db $db_helper */
+            $db_helper = plugin_load('helper', 'approve_db');
+            $sqlite = $db_helper->getDB();
+        } catch (Exception $e) {
+            msg($e->getMessage(), -1);
+            return;
+        }
+
+        /** @var helper_plugin_approve $helper */
+        $helper = plugin_load('helper', 'approve');
+
+        if (!$helper->use_approve_here($sqlite, $id, $approver)) return;
+        if (!$helper->client_can_approve($id, $approver)) return;
+
+        $res = $sqlite->query('SELECT MAX(version)+1 FROM revision
+                                        WHERE page=?', $id);
+        $next_version = $sqlite->res2single($res);
+        if (!$next_version) {
+            $next_version = 1;
+        }
+        //approved IS NULL prevents from overriding already approved page
+        $sqlite->query(
+            'UPDATE revision
+            SET approved=?, approved_by=?, version=?
+            WHERE page=? AND current=1 AND approved IS NULL',
+            date('c'), $INFO['client'], $next_version, $id
+        );
     }
 }
