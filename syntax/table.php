@@ -193,7 +193,7 @@ class syntax_plugin_approve_table extends DokuWiki_Syntax_Plugin {
         $counters['all_approved_ready'] = 0;
         $counters['all'] = 0;
 
-        $form = new dokuwiki\Form\Form(['action' => wl($INFO['id'], 'approve=approve')]);
+        $form = new dokuwiki\Form\Form(['action' => wl($INFO['id'], 'approve=approve', false, '&')]);
 
         $curNS = '';
         foreach ($pages as $page) {
