@@ -17,6 +17,11 @@ $lang['hdr_page'] = 'Seite';
 $lang['hdr_state'] = 'Status';
 $lang['hdr_updated'] = 'Aktualisierung';
 $lang['hdr_approver'] = $lang['approver'];
+$lang['hdr_quick'] = 'Schnellfreigabe';
+
+$lang['submit_quick'] = 'Alle ausgewählte Seiten sofort freigeben';
+$lang['toggle_ns'] = 'Diesen Namensraum auswählen';
+
 
 $lang['all_approved'] = 'Freigaben insgesamt';
 

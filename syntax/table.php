@@ -1,9 +1,5 @@
 <?php
 
-// must be run within DokuWiki
-if(!defined('DOKU_INC')) die();
-
-
 class syntax_plugin_approve_table extends DokuWiki_Syntax_Plugin {
 
     protected $states = ['approved', 'draft', 'ready_for_approval'];
@@ -118,13 +114,9 @@ class syntax_plugin_approve_table extends DokuWiki_Syntax_Plugin {
         );
     }
 
-    public function renderXhtml(Doku_Renderer $renderer, $params)
+    protected function getApprovablePages($params)
     {
         global $INFO;
-
-        global $conf;
-        /** @var DokuWiki_Auth_Plugin $auth */
-        global $auth;
 
         try {
             /** @var \helper_plugin_approve_db $db_helper */
@@ -178,7 +170,14 @@ class syntax_plugin_approve_table extends DokuWiki_Syntax_Plugin {
                     ORDER BY colons, page.page";
 
         $res = $sqlite->query($q, $query_args);
-        $pages = $sqlite->res2arr($res);
+        return $sqlite->res2arr($res);
+    }
+
+    public function renderXhtml(Doku_Renderer $renderer, $params)
+    {
+        global $INFO;
+
+        $pages = $this->getApprovablePages($params);
 
         // Output Table
         $renderer->doc .= '<table class="plugin__approve"><tr>';
@@ -186,110 +185,42 @@ class syntax_plugin_approve_table extends DokuWiki_Syntax_Plugin {
         $renderer->doc .= '<th>' . $this->getLang('hdr_state') . '</th>';
         $renderer->doc .= '<th>' . $this->getLang('hdr_updated') . '</th>';
         $renderer->doc .= '<th>' . $this->getLang('hdr_approver') . '</th>';
+        $renderer->doc .= '<th>' . $this->getLang('hdr_quick') . '</th>';
         $renderer->doc .= '</tr>';
 
 
-        $all_approved = 0;
-        $all_approved_ready = 0;
-        $all = 0;
+        $counters['all_approved'] = 0;
+        $counters['all_approved_ready'] = 0;
+        $counters['all'] = 0;
+
+        $form = new dokuwiki\Form\Form(['action' => wl($INFO['id'], 'approve=approve')]);
 
         $curNS = '';
-        foreach($pages as $page) {
-            $id = $page['page'];
-            $approver = $page['approver'];
-            $rev = $page['rev'];
-            $approved = strtotime($page['approved']);
-            $approved_by = $page['approved_by'];
-            $ready_for_approval = strtotime($page['ready_for_approval']);
-            $ready_for_approval_by = $page['ready_for_approval_by'];
+        foreach ($pages as $page) {
+            $this->addPageRow($page, $curNS, $counters, $form);
+        } // end page loop
 
-            $pageNS = getNS($id);
+        // submit button
+        $form->addHTML('<tr><td colspan="5">');
+        $form->addButton('submit', $this->getLang('submit_quick'))->attr('type', 'submit');
+        $form->addHTML('</td></tr>');
 
-            if($pageNS != '' && $pageNS != $curNS) {
-                $curNS = $pageNS;
-
-                $renderer->doc .= '<tr><td colspan="4"><a href="';
-                $renderer->doc .= wl($curNS);
-                $renderer->doc .= '">';
-                $renderer->doc .= $curNS;
-                $renderer->doc .= '</a> ';
-                $renderer->doc .= '</td></tr>';
-            }
-
-            $all += 1;
-            if ($approved) {
-                $class = 'plugin__approve_green';
-                $state = $this->getLang('approved');
-                $date = $approved;
-                $by = $approved_by;
-
-                $all_approved += 1;
-            } elseif ($this->getConf('ready_for_approval') && $ready_for_approval) {
-                $class = 'plugin__approve_ready';
-                $state = $this->getLang('marked_approve_ready');
-                $date = $ready_for_approval;
-                $by = $ready_for_approval_by;
-
-                $all_approved_ready += 1;
-            } else {
-                $class = 'plugin__approve_red';
-                $state = $this->getLang('draft');
-                $date = $rev;
-                $by = p_get_metadata($id, 'last_change user');
-            }
-
-            $renderer->doc .= '<tr class="'.$class.'">';
-            $renderer->doc .= '<td><a href="';
-            $renderer->doc .= wl($id);
-            $renderer->doc .= '">';
-            if ($conf['useheading'] == '1') {
-                $heading = p_get_first_heading($id);
-                if ($heading != '') {
-                    $renderer->doc .= $heading;
-                } else {
-                    $renderer->doc .= $id;
-                }
-            } else {
-                $renderer->doc .= $id;
-            }
-
-            $renderer->doc .= '</a></td><td>';
-            $renderer->doc .= '<strong>'.$state. '</strong> ';
-
-            $user = $auth->getUserData($by);
-            if ($user) {
-                $renderer->doc .= $this->getLang('by'). ' ' . $user['name'];
-            }
-            $renderer->doc .= '</td><td>';
-            $renderer->doc .= '<a href="' . wl($id) . '">' . dformat($date) . '</a>';;
-            $renderer->doc .= '</td><td>';
-            if ($approver) {
-                // handle multiple approvers
-                $approvers = array_map(
-                    function ($ap) use($auth) {
-                        $user = $auth->getUserData(trim($ap));
-                     return $user ? $user['name'] : $ap;
-                    }, explode(',', $approver)
-                );
-                $renderer->doc .= implode(', ', $approvers);
-            } else {
-                $renderer->doc .= '---';
-            }
-            $renderer->doc .= '</td></tr>';
-        }
+        // render the form to doc
+        $formRender = $form->toHTML();
+        $renderer->doc .= $formRender;
 
         if ($params['summarize']) {
-            if($this->getConf('ready_for_approval')) {
+            if ($this->getConf('ready_for_approval')) {
                 $renderer->doc .= '<tr><td><strong>';
                 $renderer->doc .= $this->getLang('all_approved_ready');
                 $renderer->doc .= '</strong></td>';
 
-                $renderer->doc .= '<td colspan="3">';
+                $renderer->doc .= '<td colspan="4">';
                 $percent       = 0;
-                if($all > 0) {
-                    $percent = $all_approved_ready * 100 / $all;
+                if ($counters['all'] > 0) {
+                    $percent = $counters['all_approved_ready'] * 100 / $counters['all'];
                 }
-                $renderer->doc .= $all_approved_ready . ' / ' . $all . sprintf(" (%.0f%%)", $percent);
+                $renderer->doc .= $counters['all_approved_ready'] . ' / ' . $counters['all'] . sprintf(" (%.0f%%)", $percent);
                 $renderer->doc .= '</td></tr>';
             }
 
@@ -297,15 +228,159 @@ class syntax_plugin_approve_table extends DokuWiki_Syntax_Plugin {
             $renderer->doc .= $this->getLang('all_approved');
             $renderer->doc .= '</strong></td>';
 
-            $renderer->doc .= '<td colspan="3">';
+            $renderer->doc .= '<td colspan="4">';
             $percent       = 0;
-            if($all > 0) {
-                $percent = $all_approved * 100 / $all;
+            if ($counters['all'] > 0) {
+                $percent = $counters['all_approved'] * 100 / $counters['all'];
             }
-            $renderer->doc .= $all_approved . ' / ' . $all . sprintf(" (%.0f%%)", $percent);
+            $renderer->doc .= $counters['all_approved'] . ' / ' . $counters['all'] . sprintf(" (%.0f%%)", $percent);
             $renderer->doc .= '</td></tr>';
         }
 
         $renderer->doc .= '</table>';
+    }
+
+    /**
+     * Assemble page row as HTML and checkbox, add it to form.
+     *
+     * @param string $page
+     * @param string $curNS
+     * @param array $counters
+     * @param dokuwiki\Form\Form $form
+     */
+    protected function addPageRow($page, &$curNS, &$counters, $form)
+    {
+        global $conf;
+        /** @var DokuWiki_Auth_Plugin $auth */
+        global $auth;
+
+        $rowMarkup = '';
+
+        $id = $page['page'];
+        $approver = $page['approver'];
+        $rev = $page['rev'];
+        $approved = strtotime($page['approved']);
+        $approved_by = $page['approved_by'];
+        $ready_for_approval = strtotime($page['ready_for_approval']);
+        $ready_for_approval_by = $page['ready_for_approval_by'];
+
+        $pageNS = getNS($id);
+
+        if ($pageNS != '' && $pageNS != $curNS) {
+            $curNS = $pageNS;
+
+            $rowMarkup .= '<tr><td colspan="4"><a href="';
+            $rowMarkup .= wl($curNS);
+            $rowMarkup .= '">';
+            $rowMarkup .= $curNS;
+            $rowMarkup .= '</a> ';
+            $rowMarkup .= '</td>';
+            // bulk NS toggle
+            $rowMarkup .= '<td>';
+            $rowMarkup .= '<input type="checkbox" class="plugin__approve_toggle_ns" data-ns="' . $curNS . '">';
+            $rowMarkup .= $this->getLang('toggle_ns') . '</a>';
+            $rowMarkup .= '</td>';
+
+            $rowMarkup .= '</tr>';
+        }
+
+        $counters['all'] += 1;
+        if ($approved) {
+            $class = 'plugin__approve_green';
+            $state = $this->getLang('approved');
+            $date = $approved;
+            $by = $approved_by;
+
+            $counters['all_approved'] += 1;
+        } elseif ($this->getConf('ready_for_approval') && $ready_for_approval) {
+            $class = 'plugin__approve_ready';
+            $state = $this->getLang('marked_approve_ready');
+            $date = $ready_for_approval;
+            $by = $ready_for_approval_by;
+
+            $counters['all_approved_ready'] += 1;
+        } else {
+            $class = 'plugin__approve_red';
+            $state = $this->getLang('draft');
+            $date = $rev;
+            $by = p_get_metadata($id, 'last_change user');
+        }
+
+        $rowMarkup .= '<tr class="'.$class.'">';
+
+        // page column
+        $rowMarkup .= '<td><a href="';
+        $rowMarkup .= wl($id);
+        $rowMarkup .= '">';
+        if ($conf['useheading'] == '1') {
+            $heading = p_get_first_heading($id);
+            if ($heading != '') {
+                $rowMarkup .= $heading;
+            } else {
+                $rowMarkup .= $id;
+            }
+        } else {
+            $rowMarkup .= $id;
+        }
+        $rowMarkup .= '</a></td>';
+
+        // status column
+        $rowMarkup .= '<td><strong>'.$state. '</strong> ';
+
+        $user = $auth->getUserData($by);
+        if ($user) {
+            $rowMarkup .= $this->getLang('by'). ' ' . $user['name'];
+        }
+        $rowMarkup .= '</td>';
+
+        // current revision column
+        $rowMarkup .= '<td><a href="' . wl($id) . '">' . dformat($date) . '</a></td>';
+
+        // approver column
+        $rowMarkup .= '<td>';
+        if ($approver) {
+            // handle multiple approvers
+            $approversArray = explode(',', $approver);
+            $approvers = array_map(
+                function ($ap) use($auth) {
+                    $user = $auth->getUserData(trim($ap));
+                    return $user ? $user['name'] : $ap;
+                }, $approversArray
+            );
+            $rowMarkup .= implode(', ', $approvers);
+        } else {
+            $approversArray = [];
+            $rowMarkup .= '---';
+        }
+        $rowMarkup .= '</td>';
+
+        // include all columns so far
+        $form->addHTML($rowMarkup);
+
+        // finally bulk select column
+        $form->addHTML('<td>');
+        if (!$approved && $this->isCurrentUserApprover($id, $approversArray)) {
+            $form->addCheckbox('bulk[]')
+                ->addClass('plugin__approve_bulk_checkbox')
+                ->attr('data-ns', $curNS)
+                ->val($id);
+        }
+        $form->addHTML('</td>');
+        $form->addHTML('</tr>');
+    }
+
+    /**
+     * Returns true if the current user may approve the given page
+     *
+     * @param string $id
+     * @param array $approver
+     * @return bool
+     */
+    protected function isCurrentUserApprover($id, $approver)
+    {
+        /** @var helper_plugin_approve $helper */
+        $helper = plugin_load('helper', 'approve');
+
+        return $helper->client_can_approve($id, $approver);
     }
 }

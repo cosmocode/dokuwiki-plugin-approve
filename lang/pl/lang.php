@@ -15,6 +15,10 @@ $lang['hdr_page'] = 'Nazwa strony';
 $lang['hdr_state'] = 'Status';
 $lang['hdr_updated'] = 'Data';
 $lang['hdr_approver'] = $lang['approver'];
+$lang['hdr_quick'] = 'Szybkie zatwierdzanie';
+
+$lang['submit_quick'] = 'Zatwierdź zaznaczone natychmiast';
+$lang['toggle_ns'] = 'Zaznacz tę przestrzeń nazw';
 
 
 $lang['all_approved'] = 'Zatwierdzone';

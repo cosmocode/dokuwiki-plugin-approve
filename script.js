@@ -127,3 +127,15 @@ jQuery(function() {
 
     $table.prependTo("body");
 });
+
+/*
+Checkbox toggles in approve table (bulk approve)
+ */
+jQuery(function() {
+    jQuery('.plugin__approve_toggle_ns').click(function() {
+        const $this = jQuery(this);
+        const ns = $this.data('ns');
+        const sel = '[data-ns="' + ns + '"]';
+        jQuery(sel).prop('checked', this.checked);
+    });
+});
