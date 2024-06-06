@@ -1,17 +1,9 @@
 <?php
-/**
- * DokuWiki Plugin watchcycle (Admin Component)
- *
- * @license GPL 2 http://www.gnu.org/licenses/gpl-2.0.html
- * @author  Szymon Olewniczak <dokuwiki@cosmocode.de>
- */
 
-// must be run within Dokuwiki
-if (!defined('DOKU_INC')) {
-    die();
-}
+use dokuwiki\Extension\AdminPlugin;
+use dokuwiki\Extension\Event;
 
-class admin_plugin_approve extends DokuWiki_Admin_Plugin
+class admin_plugin_approve extends AdminPlugin
 {
     /**
      * @return int sort number in admin menu
@@ -30,35 +22,26 @@ class admin_plugin_approve extends DokuWiki_Admin_Plugin
         /* @var Input */
         global $INPUT;
 
-        try {
-            /** @var \helper_plugin_approve_db $db_helper */
-            $db_helper = plugin_load('helper', 'approve_db');
-            $sqlite = $db_helper->getDB();
-        } catch (Exception $e) {
-            msg($e->getMessage(), -1);
-            return;
-        }
-        /** @var helper_plugin_approve $helper */
-        $helper = plugin_load('helper', 'approve');
+        /** @var helper_plugin_approve_data $db */
+        $db = $this->loadHelper('approve_data');
 
         if($INPUT->str('action') && $INPUT->arr('assignment') && checkSecurityToken()) {
             $assignment = $INPUT->arr('assignment');
             //insert empty string as NULL
             if ($INPUT->str('action') === 'delete') {
-                $sqlite->query('DELETE FROM maintainer WHERE id=?', $assignment['id']);
-                $helper->updatePagesAssignments($sqlite);
+                $db->deleteMaintainer((int) $assignment['id']);
+                $db->updatePagesAssignments();
             } else if ($INPUT->str('action') === 'add' && !blank($assignment['assign'])) {
-                $data = [
-                    'namespace' => $assignment['assign']
-                ];
+                $approver = '';
                 if (!blank($assignment['approver'])) {
-                    $data['approver'] = $assignment['approver'];
-                } else if (!blank($assignment['approver_fb'])) {
-                    $data['approver'] = $assignment['approver_fb'];
+                    $approver = $assignment['approver'];
+                } elseif (!blank($assignment['approver_fb'])) {
+                    $approver = $assignment['approver_fb'];
                 }
-                $sqlite->storeEntry('maintainer', $data);
+                $db->addMaintainer($assignment['assign'], $approver);
 
-                $helper->updatePagesAssignments($sqlite);
+                // TODO: Transaction must be commit before updatePageAssignments
+                $db->updatePagesAssignments();
             }
 
             send_redirect(wl($ID, array('do' => 'admin', 'page' => 'approve'), true, '&'));

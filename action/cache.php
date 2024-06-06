@@ -1,28 +1,23 @@
 <?php
 
-if(!defined('DOKU_INC')) die();
+use dokuwiki\Extension\ActionPlugin;
+use dokuwiki\Extension\EventHandler;
+use dokuwiki\Extension\Event;
 
-class action_plugin_approve_cache extends DokuWiki_Action_Plugin
+class action_plugin_approve_cache extends ActionPlugin
 {
     /**
-     * Registers a callback function for a given event
-     *
-     * @param Doku_Event_Handler $controller DokuWiki's event controller object
-     *
-     * @return void
+     * @inheritDoc
      */
-    public function register(Doku_Event_Handler $controller)
+    public function register(EventHandler $controller)
     {
         $controller->register_hook('PARSER_CACHE_USE', 'BEFORE', $this, 'handle_parser_cache_use');
     }
     /**
-     * @param Doku_Event $event event object by reference
-     * @param mixed $param [the parameters passed as fifth argument to register_hook() when this
-     *                           handler was registered]
-     *
-     * @return void
+     * @param Event $event
+     * @param mixed $param
      */
-    public function handle_parser_cache_use(Doku_Event $event, $param)
+    public function handle_parser_cache_use(Event $event, $param)
     {
         /** @var cache_renderer $cache */
         $cache = $event->data;

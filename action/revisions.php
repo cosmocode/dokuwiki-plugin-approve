@@ -1,37 +1,29 @@
 <?php
 
+use dokuwiki\Extension\ActionPlugin;
+use dokuwiki\Extension\EventHandler;
+use dokuwiki\Extension\Event;
 use dokuwiki\Form\TagOpenElement;
 use dokuwiki\Form\CheckableElement;
 
-if(!defined('DOKU_INC')) die();
+class action_plugin_approve_revisions extends ActionPlugin {
 
-
-class action_plugin_approve_revisions extends DokuWiki_Action_Plugin {
-
-    function register(Doku_Event_Handler $controller) {
+    function register(EventHandler $controller) {
 		$controller->register_hook('FORM_REVISIONS_OUTPUT', 'BEFORE', $this, 'handle_revisions', array());
 	}
 
-	function handle_revisions(Doku_Event $event, $param) {
+	function handle_revisions(Event $event, $param) {
 		global $INFO;
 
-        try {
-            /** @var \helper_plugin_approve_db $db_helper */
-            $db_helper = plugin_load('helper', 'approve_db');
-            $sqlite = $db_helper->getDB();
-        } catch (Exception $e) {
-            msg($e->getMessage(), -1);
-            return;
-        }
-        /** @var helper_plugin_approve $helper */
-        $helper = plugin_load('helper', 'approve');
+        /** @var helper_plugin_approve_data $db */
+        $db = $this->loadHelper('approve_data');
+        /** @var helper_plugin_approve_acl $acl */
+        $acl = $this->loadHelper('approve_acl');
 
-        if (!$helper->use_approve_here($sqlite, $INFO['id'])) return;
+        if (!$acl->useApproveHere($INFO['id'])) return;
 
-        $res = $sqlite->query('SELECT rev, approved, ready_for_approval
-                                FROM revision
-                                WHERE page=?', $INFO['id']);
-        $approve_revisions = $sqlite->res2arr($res);
+        $approve_revisions = $db->getPageRevisions($INFO['id']);
+
         $last_approved_rev = null;
         if (count($approve_revisions) > 1) {
             $last_approved_rev = max(array_column(array_filter($approve_revisions, function ($v) {
