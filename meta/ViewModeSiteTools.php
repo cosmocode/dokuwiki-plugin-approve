@@ -10,6 +10,7 @@ class ViewModeSiteTools extends AbstractItem {
     public function __construct() {
         parent::__construct();
 
+        /** @var helper_plugin_approve $helper */
         $helper = plugin_load('helper', 'approve');
         $viewmode = get_doku_pref('approve_viewmode', false);
         if ($viewmode) {

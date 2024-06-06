@@ -9,6 +9,7 @@ class ViewModeEdit extends AbstractItem {
     /** @inheritdoc */
     public function __construct() {
         parent::__construct();
+        /** @var helper_plugin_approve $helper */
         $helper = plugin_load('helper', 'approve');
 
         $this->svg = DOKU_INC . 'lib/plugins/approve/circle-edit-outline.svg';

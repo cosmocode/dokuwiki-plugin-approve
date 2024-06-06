@@ -179,7 +179,7 @@ class action_plugin_approve_approve extends ActionPlugin {
             if ($rev != $last_change_date) {
                 // we can see drafts
                 if ($acl->clientCanSeeDrafts($INFO['id'])) {
-                    echo '<a href="' . wl($INFO['id']) . '">';
+                    echo ' <a href="' . wl($INFO['id']) . '">';
                     echo $this->getLang($last_approved_rev == $last_change_date ? 'newest_approved' : 'newest_draft');
                     echo '</a>';
                     // we cannot see link to draft but there is some newer approved version
@@ -188,7 +188,7 @@ class action_plugin_approve_approve extends ActionPlugin {
                     if ($last_approved_rev != $last_change_date) {
                         $urlParameters['rev'] = $last_approved_rev;
                     }
-                    echo '<a href="' . wl($INFO['id'], $urlParameters) . '">';
+                    echo ' <a href="' . wl($INFO['id'], $urlParameters) . '">';
                     echo $this->getLang('newest_approved');
                     echo '</a>';
                 }
@@ -207,7 +207,7 @@ class action_plugin_approve_approve extends ActionPlugin {
             if ($last_approved_rev == null) {
                 // not the newest page
                 if ($rev != $last_change_date) {
-                    echo '<a href="'.wl($INFO['id']).'">';
+                    echo ' <a href="'.wl($INFO['id']).'">';
                     echo $this->getLang('newest_draft');
                     echo '</a>';
                 }
@@ -216,7 +216,7 @@ class action_plugin_approve_approve extends ActionPlugin {
                 if ($last_approved_rev != $last_change_date) {
                     $urlParameters['rev'] = $last_approved_rev;
                 }
-                echo '<a href="' . wl($INFO['id'], $urlParameters) . '">';
+                echo ' <a href="' . wl($INFO['id'], $urlParameters) . '">';
                 echo $this->getLang('newest_approved');
                 echo '</a>';
             }
