@@ -31,12 +31,12 @@ class action_plugin_approve_approve extends ActionPlugin {
 
         if ($event->data == 'diff' && isset($_GET['approve'])) {
             $href = wl($INFO['id'], ['approve' => 'approve']);
-            ptln('<a href="' . $href . '">'.$this->getLang('approve').'</a>');
+            echo '<a href="' . $href . '">'.$this->getLang('approve').'</a>';
         }
 
         if ($this->getConf('ready_for_approval') && $event->data == 'diff' && isset($_GET['ready_for_approval'])) {
             $href = wl($INFO['id'], ['ready_for_approval' => 'ready_for_approval']);
-            ptln('<a href="' . $href . '">'.$this->getLang('approve_ready').'</a>');
+            echo '<a href="' . $href . '">'.$this->getLang('approve_ready').'</a>';
         }
     }
 
@@ -46,8 +46,8 @@ class action_plugin_approve_approve extends ActionPlugin {
     public function handle_showrev(Event $event) {
         global $INFO;
 
-        /** @var helper_plugin_approve_data $db */
-        $db = $this->loadHelper('approve_data');
+        /** @var helper_plugin_approve_db $db */
+        $db = $this->loadHelper('approve_db');
         /** @var helper_plugin_approve_acl $acl */
         $acl = $this->loadHelper('approve_acl');
 
@@ -73,8 +73,8 @@ class action_plugin_approve_approve extends ActionPlugin {
         if (!$acl->useApproveHere($INFO['id'])) return;
         if (!$acl->clientCanApprove($INFO['id'])) return;
 
-        /** @var helper_plugin_approve_data $db */
-        $db = $this->loadHelper('approve_data');
+        /** @var helper_plugin_approve_db $db */
+        $db = $this->loadHelper('approve_db');
         $db->setApprovedStatus($INFO['id']);
 
         header('Location: ' . wl($INFO['id']));
@@ -94,8 +94,8 @@ class action_plugin_approve_approve extends ActionPlugin {
         if (!$acl->useApproveHere($INFO['id'])) return;
         if (!$acl->clientCanMarkReadyForApproval($INFO['id'])) return;
 
-        /** @var helper_plugin_approve_data $db */
-        $db = $this->loadHelper('approve_data');
+        /** @var helper_plugin_approve_db $db */
+        $db = $this->loadHelper('approve_db');
         $db->setReadyForApprovalStatus($INFO['id']);
 
         header('Location: ' . wl($INFO['id']));
@@ -118,8 +118,8 @@ class action_plugin_approve_approve extends ActionPlugin {
         if (!$acl->useApproveHere($INFO['id'])) return;
         if ($acl->clientCanSeeDrafts($INFO['id'])) return;
 
-        /** @var helper_plugin_approve_data $db */
-        $db = $this->loadHelper('approve_data');
+        /** @var helper_plugin_approve_db $db */
+        $db = $this->loadHelper('approve_db');
         $last_approved_rev = $db->getLastDbRev($INFO['id'], 'approved');
 
         //no page is approved
@@ -146,8 +146,8 @@ class action_plugin_approve_approve extends ActionPlugin {
         $rev = !$INFO['rev'] ? $last_change_date : $INFO['rev'];
 
 
-        /** @var helper_plugin_approve_data $db */
-        $db = $this->loadHelper('approve_data');
+        /** @var helper_plugin_approve_db $db */
+        $db = $this->loadHelper('approve_db');
 
         $page_revision = $db->getPageRevision($INFO['id'], $rev);
         $last_approved_rev = $db->getLastDbRev($INFO['id'], 'approved');
@@ -163,62 +163,62 @@ class action_plugin_approve_approve extends ActionPlugin {
             $classes[] = 'plugin__approve_draft';
         }
 
-        ptln('<div id="plugin__approve" class="' . implode(' ', $classes) . '">');
+        echo '<div id="plugin__approve" class="' . implode(' ', $classes) . '">';
 
 
         if ($page_revision['status'] == 'approved') {
-            ptln('<strong>'.$this->getLang('approved').'</strong>');
-            ptln(' ' . dformat(strtotime($page_revision['approved'])));
+            echo '<strong>'.$this->getLang('approved').'</strong>';
+            echo ' ' . dformat(strtotime($page_revision['approved']));
 
             if($this->getConf('banner_long')) {
-                ptln(' ' . $this->getLang('by') . ' ' . userlink($page_revision['approved_by'], true));
-                ptln(' (' . $this->getLang('version') .  ': ' . $page_revision['version'] . ')');
+                echo ' ' . $this->getLang('by') . ' ' . userlink($page_revision['approved_by'], true);
+                echo ' (' . $this->getLang('version') .  ': ' . $page_revision['version'] . ')';
             }
 
             //not the newest page
             if ($rev != $last_change_date) {
                 // we can see drafts
                 if ($acl->clientCanSeeDrafts($INFO['id'])) {
-                    ptln('<a href="' . wl($INFO['id']) . '">');
-                    ptln($this->getLang($last_approved_rev == $last_change_date ? 'newest_approved' : 'newest_draft'));
-                    ptln('</a>');
+                    echo '<a href="' . wl($INFO['id']) . '">';
+                    echo $this->getLang($last_approved_rev == $last_change_date ? 'newest_approved' : 'newest_draft');
+                    echo '</a>';
                     // we cannot see link to draft but there is some newer approved version
                 } elseif ($last_approved_rev != $rev) {
                     $urlParameters = [];
                     if ($last_approved_rev != $last_change_date) {
                         $urlParameters['rev'] = $last_approved_rev;
                     }
-                    ptln('<a href="' . wl($INFO['id'], $urlParameters) . '">');
-                    ptln($this->getLang('newest_approved'));
-                    ptln('</a>');
+                    echo '<a href="' . wl($INFO['id'], $urlParameters) . '">';
+                    echo $this->getLang('newest_approved');
+                    echo '</a>';
                 }
             }
 
         } else {
             if ($this->getConf('ready_for_approval') && $page_revision['status'] == 'ready_for_approval') {
-                ptln('<strong>'.$this->getLang('marked_approve_ready').'</strong>');
-                ptln(' ' . dformat(strtotime($page_revision['ready_for_approval'])));
-                ptln(' ' . $this->getLang('by') . ' ' . userlink($page_revision['ready_for_approval_by'], true));
+                echo '<strong>'.$this->getLang('marked_approve_ready').'</strong>';
+                echo ' ' . dformat(strtotime($page_revision['ready_for_approval']));
+                echo ' ' . $this->getLang('by') . ' ' . userlink($page_revision['ready_for_approval_by'], true);
             } else {
-                ptln('<strong>'.$this->getLang('draft').'</strong>');
+                echo '<strong>'.$this->getLang('draft').'</strong>';
             }
 
             // not exists approve for current page
             if ($last_approved_rev == null) {
                 // not the newest page
                 if ($rev != $last_change_date) {
-                    ptln('<a href="'.wl($INFO['id']).'">');
-                    ptln($this->getLang('newest_draft'));
-                    ptln('</a>');
+                    echo '<a href="'.wl($INFO['id']).'">';
+                    echo $this->getLang('newest_draft');
+                    echo '</a>';
                 }
             } else {
                 $urlParameters = [];
                 if ($last_approved_rev != $last_change_date) {
                     $urlParameters['rev'] = $last_approved_rev;
                 }
-                ptln('<a href="' . wl($INFO['id'], $urlParameters) . '">');
-                ptln($this->getLang('newest_approved'));
-                ptln('</a>');
+                echo '<a href="' . wl($INFO['id'], $urlParameters) . '">';
+                echo $this->getLang('newest_approved');
+                echo '</a>';
             }
 
             //we are in current page
@@ -232,9 +232,9 @@ class action_plugin_approve_approve extends ActionPlugin {
                         'do' => 'diff',
                         'ready_for_approval' => 'ready_for_approval'
                     ];
-                    ptln(' | <a href="'.wl($INFO['id'], $urlParameters).'">');
-                    ptln($this->getLang('approve_ready'));
-                    ptln('</a>');
+                    echo ' | <a href="'.wl($INFO['id'], $urlParameters).'">';
+                    echo $this->getLang('approve_ready');
+                    echo '</a>';
                 }
 
                 if ($acl->clientCanApprove($INFO['id'])) {
@@ -243,18 +243,18 @@ class action_plugin_approve_approve extends ActionPlugin {
                         'do' => 'diff',
                         'approve' => 'approve'
                     ];
-                    ptln(' | <a href="'.wl($INFO['id'], $urlParameters).'">');
-                    ptln($this->getLang('approve'));
-                    ptln('</a>');
+                    echo ' | <a href="'.wl($INFO['id'], $urlParameters).'">';
+                    echo $this->getLang('approve');
+                    echo '</a>';
                 }
             }
         }
 
         if (isset($page_metadata['approver']) & $this->getConf('banner_long')) {
-            ptln(' | ' . $this->getLang('approver') . ': ' . userlink($page_metadata['approver'], true));
+            echo ' | ' . $this->getLang('approver') . ': ' . userlink($page_metadata['approver'], true);
         }
 
-        ptln('</div>');
+        echo '</div>';
     }
 
     /**
@@ -265,8 +265,8 @@ class action_plugin_approve_approve extends ActionPlugin {
         //no content was changed
         if (!$event->data['contentChanged']) return;
 
-        /** @var helper_plugin_approve_data $db */
-        $db = $this->loadHelper('approve_data');
+        /** @var helper_plugin_approve_db $db */
+        $db = $this->loadHelper('approve_db');
 
         $id = $event->data['id'];
         switch ($event->data['changeType']) {

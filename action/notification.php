@@ -25,8 +25,8 @@ class action_plugin_approve_notification extends ActionPlugin
     {
         if (!in_array('approve', $event->data['plugins'])) return;
 
-        /** @var \helper_plugin_approve_data $db */
-        $db = $this->loadHelper('approve_data');
+        /** @var \helper_plugin_approve_db $db */
+        $db = $this->loadHelper('approve_db');
         $event->data['dependencies'][] = $db->getDbFile();
     }
 
@@ -36,8 +36,8 @@ class action_plugin_approve_notification extends ActionPlugin
 
         $user = $event->data['user'];
 
-        /** @var \helper_plugin_approve_data $db */
-        $db = $this->loadHelper('approve_data');
+        /** @var \helper_plugin_approve_db $db */
+        $db = $this->loadHelper('approve_db');
 
         $states = ['draft', 'ready_for_approval'];
         if ($this->getConf('ready_for_approval_notification')) {

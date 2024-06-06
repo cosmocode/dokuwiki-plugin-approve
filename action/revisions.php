@@ -15,8 +15,8 @@ class action_plugin_approve_revisions extends ActionPlugin {
 	function handle_revisions(Event $event, $param) {
 		global $INFO;
 
-        /** @var helper_plugin_approve_data $db */
-        $db = $this->loadHelper('approve_data');
+        /** @var helper_plugin_approve_db $db */
+        $db = $this->loadHelper('approve_db');
         /** @var helper_plugin_approve_acl $acl */
         $acl = $this->loadHelper('approve_acl');
 

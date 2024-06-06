@@ -4,7 +4,7 @@ use dokuwiki\Extension\AuthPlugin;
 use dokuwiki\Extension\Plugin;
 use dokuwiki\plugin\sqlite\SQLiteDB;
 
-class helper_plugin_approve_data extends Plugin
+class helper_plugin_approve_db extends Plugin
 {
     protected $db;
 
@@ -365,5 +365,11 @@ class helper_plugin_approve_data extends Plugin
             'approver' => $approver
         ]);
         $this->db->getPdo()->commit();
+    }
+
+    public function getMaintainers(): ?array
+    {
+        $sql = 'SELECT id, namespace, approver FROM maintainer ORDER BY namespace';
+        return $this->db->queryAll($sql);
     }
 }

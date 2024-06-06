@@ -5,8 +5,8 @@ use dokuwiki\Extension\Plugin;
 class helper_plugin_approve_acl extends Plugin
 {
     public function useApproveHere($id) {
-        /** @var helper_plugin_approve_data $db */
-        $db = $this->loadHelper('approve_data');
+        /** @var helper_plugin_approve_db $db */
+        $db = $this->loadHelper('approve_db');
         $page_metadata = $db->getPageMetadata($id);
         if ($page_metadata === null) { // do not use approve plugin here
             return false;
@@ -21,8 +21,8 @@ class helper_plugin_approve_acl extends Plugin
         // user not log in
         if (!isset($INFO['userinfo'])) return false;
 
-        /** @var helper_plugin_approve_data $db */
-        $db = $this->loadHelper('approve_data');
+        /** @var helper_plugin_approve_db $db */
+        $db = $this->loadHelper('approve_db');
         $page_metadata = $db->getPageMetadata($id);
 
         if ($page_metadata === null) {

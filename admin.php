@@ -22,8 +22,8 @@ class admin_plugin_approve extends AdminPlugin
         /* @var Input */
         global $INPUT;
 
-        /** @var helper_plugin_approve_data $db */
-        $db = $this->loadHelper('approve_data');
+        /** @var helper_plugin_approve_db $db */
+        $db = $this->loadHelper('approve_db');
 
         if($INPUT->str('action') && $INPUT->arr('assignment') && checkSecurityToken()) {
             $assignment = $INPUT->arr('assignment');
@@ -39,8 +39,6 @@ class admin_plugin_approve extends AdminPlugin
                     $approver = $assignment['approver_fb'];
                 }
                 $db->addMaintainer($assignment['assign'], $approver);
-
-                // TODO: Transaction must be commit before updatePageAssignments
                 $db->updatePagesAssignments();
             }
 
@@ -57,18 +55,6 @@ class admin_plugin_approve extends AdminPlugin
         /* @var DokuWiki_Auth_Plugin $auth */
         global $auth;
 
-        try {
-            /** @var \helper_plugin_approve_db $db_helper */
-            $db_helper = plugin_load('helper', 'approve_db');
-            $sqlite = $db_helper->getDB();
-        } catch (Exception $e) {
-            msg($e->getMessage(), -1);
-            return;
-        }
-
-        $res = $sqlite->query('SELECT * FROM maintainer ORDER BY namespace');
-        $assignments = $sqlite->res2arr($res);
-
         echo $this->locale_xhtml('assignments_intro');
 
         echo '<form action="' . wl($ID) . '" action="post">';
@@ -84,11 +70,14 @@ class admin_plugin_approve extends AdminPlugin
         echo '<th></th>';
         echo '</tr>';
 
-        // existing assignments
+        /** @var helper_plugin_approve_db $db */
+        $db = $this->loadHelper('approve_db');
+        $assignments = $db->getMaintainers();
+
         foreach($assignments as $assignment) {
             $id = $assignment['id'];
             $namespace = $assignment['namespace'];
-            $approver = $assignment['approver'] ? $assignment['approver'] : '---';
+            $approver = $assignment['approver'] ?: '---';
 
             $link = wl(
                 $ID, array(

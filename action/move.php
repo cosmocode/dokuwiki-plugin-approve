@@ -22,7 +22,7 @@ class action_plugin_approve_move extends ActionPlugin {
      */
     public function handle_move(Event $event, $ispage) {
         /** @var \helper_plugin_approve_db $db_helper */
-        $db = $this->loadHelper('approve_data');
+        $db = $this->loadHelper('approve_db');
 
         $old = $event->data['src_id'];
         $new = $event->data['dst_id'];
