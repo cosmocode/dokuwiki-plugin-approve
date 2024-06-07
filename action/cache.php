@@ -34,10 +34,9 @@ class action_plugin_approve_cache extends ActionPlugin
             $cache->_nocache = true;
         } elseif ($approve['approve_table']) {
             try {
-                /** @var \helper_plugin_approve_db $db_helper */
-                $db_helper = plugin_load('helper', 'approve_db');
-                $sqlite = $db_helper->getDB();
-                $cache->depends['files'][] = $sqlite->getAdapter()->getDbFile();
+                /** @var helper_plugin_approve_db $db */
+                $db = $this->loadHelper('approve_db');
+                $cache->depends['files'][] = $db->getDbFile();
             } catch (Exception $e) {
                 msg($e->getMessage(), -1);
                 return;

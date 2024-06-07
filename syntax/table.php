@@ -1,12 +1,8 @@
 <?php
 
-// must be run within DokuWiki
-use dokuwiki\plugin\approve\meta\ApproveMetadata;
+use dokuwiki\Extension\SyntaxPlugin;
 
-if(!defined('DOKU_INC')) die();
-
-
-class syntax_plugin_approve_table extends DokuWiki_Syntax_Plugin {
+class syntax_plugin_approve_table extends SyntaxPlugin {
 
     protected $states = ['approved', 'draft', 'ready_for_approval'];
 
@@ -36,7 +32,7 @@ class syntax_plugin_approve_table extends DokuWiki_Syntax_Plugin {
             'filter' => false,
             'states' => $this->states,
             'summarize' => true,
-            'approver' => null
+            'approver' => ''
         ];
 
         foreach ($lines as $line) {
@@ -104,10 +100,7 @@ class syntax_plugin_approve_table extends DokuWiki_Syntax_Plugin {
         $plugin_name = $this->getPluginName();
         $renderer->meta['plugin'][$plugin_name] = [];
 
-        if ($params['approver'] == '$USER$') {
-            $renderer->meta['plugin'][$plugin_name]['dynamic_approver'] = true;
-        }
-
+        $renderer->meta['plugin'][$plugin_name]['dynamic_approver'] = $params['approver'] == '$USER$';
         $renderer->meta['plugin'][$plugin_name]['approve_table'] = true;
     }
 
@@ -128,18 +121,11 @@ class syntax_plugin_approve_table extends DokuWiki_Syntax_Plugin {
         /** @var DokuWiki_Auth_Plugin $auth */
         global $auth;
 
-        try {
-            $approveMetadata = new ApproveMetadata();
-        } catch (Exception $e) {
-            msg($e->getMessage(), -1);
-            return;
-        }
+
 
         if ($params['approver'] == '$USER$') {
             $params['approver'] = $INFO['client'];
         }
-
-        $pages = $approveMetadata->getPages($params['approver'], $params['states'], $params['namespace'], $params['filter']);
 
         // Output Table
         $renderer->doc .= '<table><tr>';
@@ -155,8 +141,12 @@ class syntax_plugin_approve_table extends DokuWiki_Syntax_Plugin {
         $all = 0;
 
         $curNS = '';
+
+        /** @var helper_plugin_approve_db $db */
+        $db = $this->loadHelper('approve_db');
+        $pages = $db->getPages($params['approver'], $params['states'], $params['namespace'], $params['filter']);
         foreach($pages as $page) {
-            $id = $page['page'];
+            $id = $page['id'];
             $approver = $page['approver'];
             $rev = $page['rev'];
             $approved = strtotime($page['approved']);
