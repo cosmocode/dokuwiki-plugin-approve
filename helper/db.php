@@ -318,8 +318,6 @@ class helper_plugin_approve_db extends Plugin
 
     protected function updatePage(string $page_id): void
     {
-        // mark current revision as old
-        $this->db->exec('UPDATE revision SET current=0 WHERE page=? AND current=1', $page_id);
         // delete all unimportant revisions
         $this->db->exec('DELETE FROM revision WHERE page=? AND approved IS NULL AND ready_for_approval IS NULL'
             , $page_id);
@@ -332,15 +330,24 @@ class helper_plugin_approve_db extends Plugin
                 'hidden' => (int) $this->pageInHiddenNamespace($page_id),
                 'approver' => $approver
             ];
-            $this->db->saveRecord('page', $data);
+            $this->db->saveRecord('page', $data);  // insert or replace
         }
 
         $last_change_date = @filemtime(wikiFN($page_id));
-        $this->db->saveRecord('revision', [
-            'page' => $page_id,
-            'rev' => $last_change_date,
-            'current' => 1
-        ]);
+        // record for current revision exists
+        $sql = 'SELECT 1 FROM revision WHERE page=? AND rev=?';
+        $exists = $this->db->queryValue($sql, $page_id, $last_change_date);
+        if ($exists === null) {
+            // mark previous revision as old. this may be already deleted by DELETE
+            $this->db->exec('UPDATE revision SET current=0 WHERE page=? AND current=1', $page_id);
+            // create new record
+            $this->db->saveRecord('revision', [
+                'page' => $page_id,
+                'rev' => $last_change_date,
+                'current' => 1
+            ]);
+        }
+
     }
 
     public function handlePageEdit(string $page_id): void
