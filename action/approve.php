@@ -138,6 +138,13 @@ class action_plugin_approve_approve extends ActionPlugin {
     public function handle_display_banner(Event $event) {
         global $INFO;
 
+        if ($event->data != 'show' || !$INFO['exists']) return;
+
+        /* Return true if banner should not be displayed for users with or below read only permission. */
+        if (auth_quickaclcheck($INFO['id']) <= AUTH_READ && !$this->getConf('display_banner_for_readonly')) {
+            return;
+        }
+
         /** @var helper_plugin_approve_acl $acl */
         $acl = $this->loadHelper('approve_acl');
         if (!$acl->useApproveHere($INFO['id'])) return;
