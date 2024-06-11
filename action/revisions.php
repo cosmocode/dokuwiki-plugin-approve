@@ -23,16 +23,9 @@ class action_plugin_approve_revisions extends ActionPlugin {
         if (!$acl->useApproveHere($INFO['id'])) return;
 
         $approve_revisions = $db->getPageRevisions($INFO['id']);
-
-        $last_approved_rev = null;
-        if (count($approve_revisions) > 1) {
-            $last_approved_rev = max(array_column(array_filter($approve_revisions, function ($v) {
-                return $v['approved'] != null;
-            }), 'rev'));
-        }
+        $last_approved_rev = $db->getLastDbRev($INFO['id'], 'approved');
 
         $approve_revisions = array_combine(array_column($approve_revisions, 'rev'), $approve_revisions);
-
 
 		$parent_div_position = -1;
 		for ($i = 0; $i < $event->data->elementCount(); $i++) {
@@ -48,11 +41,11 @@ class action_plugin_approve_revisions extends ActionPlugin {
                 }
                 if (!isset($approve_revisions[$revision])) {
                     $class =  'plugin__approve_draft';
-                } elseif ($approve_revisions[$revision]['approved'] && $revision == $last_approved_rev) {
+                } elseif ($approve_revisions[$revision]['status'] == 'approved' && $revision == $last_approved_rev) {
                     $class =  'plugin__approve_approved';
-                } elseif ($approve_revisions[$revision]['approved']) {
+                } elseif ($approve_revisions[$revision]['status'] == 'approved') {
                     $class =  'plugin__approve_old_approved';
-                } elseif ($this->getConf('ready_for_approval') && $approve_revisions[$revision]['ready_for_approval']) {
+                } elseif ($this->getConf('ready_for_approval') && $approve_revisions[$revision]['status'] == 'ready_for_approval') {
                     $class =  'plugin__approve_ready';
                 } else {
                     $class =  'plugin__approve_draft';
