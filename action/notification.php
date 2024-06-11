@@ -47,25 +47,25 @@ class action_plugin_approve_notification extends ActionPlugin
         $notifications = $db->getPages($user, $states);
 
         foreach ($notifications as $notification) {
-            $page = $notification['page'];
+            $id = $notification['id'];
             $rev = $notification['rev'];
 
-            $link = '<a class="wikilink1" href="' . wl($page, '', true) . '">';
+            $link = '<a class="wikilink1" href="' . wl($id, '', true) . '">';
             if (useHeading('content')) {
-                $heading = p_get_first_heading($page);
+                $heading = p_get_first_heading($id);
                 if (!blank($heading)) {
                     $link .= $heading;
                 } else {
-                    $link .= noNSorNS($page);
+                    $link .= noNSorNS($id);
                 }
             } else {
-                $link .= noNSorNS($page);
+                $link .= noNSorNS($id);
             }
             $link .= '</a>';
             $full = sprintf($this->getLang('notification full'), $link);
             $event->data['notifications'][] = [
                 'plugin' => 'approve',
-                'id' => $page.':'.$rev,
+                'id' => $id.':'.$rev,
                 'full' => $full,
                 'brief' => $link,
                 'timestamp' => (int)$rev
