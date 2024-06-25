@@ -257,8 +257,12 @@ class action_plugin_approve_approve extends ActionPlugin {
             }
         }
 
-        if (isset($page_metadata['approver']) & $this->getConf('banner_long')) {
-            echo ' | ' . $this->getLang('approver') . ': ' . userlink($page_metadata['approver'], true);
+
+        if ($this->getConf('banner_long')) {
+            $page_metadata = $db->getPageMetadata($INFO['id']);
+            if (isset($page_metadata['approver'])) {
+                echo ' | ' . $this->getLang('approver') . ': ' . userlink($page_metadata['approver'], true);
+            }
         }
 
         echo '</div>';
